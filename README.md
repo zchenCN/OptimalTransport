@@ -56,7 +56,6 @@ An import feature if OT is that it defines a distance between histograms and pro
 
 - $\forall i, j, k, D_{ik} \leq D_{ij} + D_{jk}$   
 
-
 Then we can define so-called Wasserstein distance on probability simplex $\Sigma_n$, 
 $$
 W_p(\textbf{a}, \textbf{b}) = L_{D^p}(\textbf{a}, \textbf{b})^{1/p}
@@ -106,7 +105,17 @@ where $\odot$ corresponds to entrywise multiplication of vectors. That problem i
 $$
 \textbf{u}^{(l+1)} = \frac{\textbf{a}}{K\textbf{v}^(l)}, \quad \textbf{v}^{(l+1)} = \frac{\textbf{b}}{K^T\textbf{u}^{(l+1)}}
 $$
-initialized with an arbitrary positive vector $\textbf{v}^{(0)} = \mathbb{1}_m$. The division operator used above between two vectors is to be understood entrywise.
+initialized with an arbitrary positive vector $\textbf{v}^{(0)} = \mathbb{1}_m$. The division operator used above between two vectors is to be understood entrywise.  
+
+In order to speed up the Sinkhorn's iterations, we can compute several regularized Wasserstein distances between pairs of histograms simultaneously. Let $N$ be an integer, $\textbf{a}_1, \cdots, \textbf{a}_N$ be histograms in $\Sigma_n$, and $\textbf{b}_1, \cdots, \textbf{b}_N$ be histograms in $\Sigma_m$. We seek to compute all $N$ approximate distances $L_C^{\epsilon}(\textbf{a}_1, \textbf{b}_1), \cdots, L_C^{\epsilon}(\textbf{a}_N, \textbf{b}_N).$  In that case, writing $A = [\textbf{a}_1, \cdots, \textbf{a}_N]$ and $B = [\textbf{b}_1, \cdots, \textbf{b}_N]$ for the $n\times N$ and $m\times N$ matrices storing all histograms,  one can notice that all Sinkhorn iterations for all these $N$ pairs can be carried out in parallel, by setting, for instance, 
+$$
+\textbf{U}^{(l+1)} = \frac{\textbf{A}}{K\textbf{V}^(l)}, \quad \textbf{V}^{(l+1)} = \frac{\textbf{B}}{K^T\textbf{U}^{(l+1)}}
+$$
+initialized with $\textbf{V}^{(0)} = \mathbb{1}_{m\times N}.$
+
+## Log-domain Stabilized Sinkhorn
+
+The Sinkhorn algorithm suffers from numerical overflow when the regularization parameter $\epsilon$ is small compared to the entries of the cost matrix $C$. This concern can be alleviated to some extent be carrying out computations in log domain.  
 
 ## References
 
