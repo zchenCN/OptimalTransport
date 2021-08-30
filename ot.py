@@ -1,5 +1,6 @@
 """
-Sinkhorn Algorithm for Optimal Transport Distance 
+Sinkhorn Algorithm for Optimal Transport Distance and computing it for 
+wave signal 
 """
 
 # Author: zchen
@@ -9,7 +10,30 @@ Sinkhorn Algorithm for Optimal Transport Distance
 import torch 
 
 
-__all__ = ['sinkhorn']
+__all__ = ['cost_matrix', 'sinkhorn', 'sinkhorn_wave']
+
+
+def cost_matrix(X, Y, p):
+    """Computing the cost matrix, i.e.
+        C_ij = ||x_i-y_j||_p^p
+
+    Parameters:
+    X: torch.Tensor of shape (n_points, d)
+        Input data
+
+    Y: torch.Tensor of shape (n_points, d)
+        Input data
+
+    p: positive int
+
+    Returns:
+    C: torch.Tensor of shape (n_points, n_points)
+        Cost matrix 
+    """
+    X_col = X.unsqueeze(1)
+    Y_lin = Y.unsqueeze(0)
+    C = torch.sum((torch.abs(X_col - Y_lin)) ** p, dim=2)
+    return C
 
 
 def sinkhorn(A, B, C, eps=0.1):
@@ -58,7 +82,9 @@ def sinkhorn(A, B, C, eps=0.1):
     
     P = torch.unsqueeze(U.T, 2) * K * torch.unsqueeze(V.T, 1)
     dist = torch.sum(P * C, dim=(1, 2))
-
+    assert not torch.any(torch.isnan(P))
+    assert not torch.any(torch.isnan(dist))
+    
     return dist, P, actual_niter
 
 
@@ -110,7 +136,7 @@ def _normalize(U, method='square'):
 
 
 def sinkhorn_wave(U, V, t, method='suqare', p=2, eps=0.1):
-    """ Computing mean sinkhorn distances for wave signals
+    """ Computing sinkhorn distances for wave signals
 
     Parameters:
     ----------
@@ -142,9 +168,7 @@ def sinkhorn_wave(U, V, t, method='suqare', p=2, eps=0.1):
     """
     Un = _normalize(U, method)
     Vn = _normalize(V, method)
-    t_row = torch.unsqueeze(t, 0)
-    t_col = torch.unsqueeze(t, 1)
-    C = (t_col - t_row) ** p
-    dist, _ = sinkhorn(Un, Vn, C, eps)
-    md = torch.mean(dist)
-    return md
+    C = cost_matrix(t.reshape(-1, 1), t.reshape(-1, 1), p)
+    dist, P, actual_niter = sinkhorn(Un, Vn, C, eps)
+
+    return dist, P, actual_niter
